@@ -2,6 +2,10 @@ from subprocess import Popen, PIPE
 import os
 import random
 from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv('/home/nus/iperf/scripts/.env')
+nuspwd = os.getenv('NUSPWD')
 
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
@@ -56,9 +60,12 @@ while len(servers) > 0:
     conns.append((timestr, i, j, r, i_ip, i_sshport, iname, j_ip, j_iperfport, jname, b1, b2, b3))
 
 for conn in conns:
-    _, _, _, r, i_ip, i_sshport, _, j_ip, j_iperfport, _, b1, b2, b3 = conn
+    _, _, _, r, i_ip, i_sshport, iname, j_ip, j_iperfport, jname, b1, b2, b3 = conn
     print(' '.join([str(v) for v in conn]))
 
-    cmd = f"bash /home/nus/iperf/scripts/arbiter_connect.sh ssh -n -p {i_sshport} nus@{i_ip} bash iperf/scripts/iperf3_connect.sh {j_ip} {j_iperfport} {b1} {b2} {b3} {r}"
-    print(cmd)
-    # process = Popen(cmd.split(), stdout=None, stderr=None, close_fds=True)
+    cmd = f"bash /home/nus/iperf/scripts/arbiter_connect.sh "
+    if iname == 'NUS1':
+        cmd += f"sshpass -p {nuspwd} ssh -o ConnectTimeout=10 -n -p 22 nus@localhost bash iperf/scripts/iperf3_connect.sh {j_ip} {j_iperfport} {b1} {b2} {b3} {r}"
+    else:
+        cmd += f"sshpass -p {nuspwd} ssh -o ConnectTimeout=10 -n -p {i_sshport} nus@{i_ip} bash iperf/scripts/iperf3_connect.sh {j_ip} {j_iperfport} {b1} {b2} {b3} {r}"
+    process = Popen(cmd.split(), stdout=None, stderr=None, close_fds=True)
